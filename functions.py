@@ -142,7 +142,7 @@ def waterp_login(username, password, url="https://waterp-cas.srm-cas.local/"): #
             page.goto(url, timeout=10000)
             page.fill("input[name='username']", username)
             page.fill("input[name='password']", password)
-            page.click("form[name = 'form'] > button")
+            page.click("form[name = 'form'] > browse_button")
             page.wait_for_timeout(2000)
 
             alert_text = page.locator(".form-container .row .alert-danger")
@@ -196,7 +196,7 @@ def process_factures(set_info_msgs_callback, factures, progress_callback, print_
                 else:
                     page.fill('input[id$="P_Logo"]', '')
 
-                page.click("button[id ='button-FCEP200U_waterp_client_cas_cas']")
+                page.click("browse_button[id ='browse_button-FCEP200U_waterp_client_cas_cas']")
                 page.wait_for_timeout(2000)
                 page.click("div#reportDoc_FCEP200U_waterp_client_cas_cas > a")
 
@@ -209,7 +209,7 @@ def process_factures(set_info_msgs_callback, factures, progress_callback, print_
                     page.fill('input[id$="P_Logo"]', 'O')
                 else:
                     page.fill('input[id$="P_Logo"]', '')
-                page.click("button[id ='button-FCEP200U_MT_waterp_client_cas_cas']")
+                page.click("browse_button[id ='browse_button-FCEP200U_MT_waterp_client_cas_cas']")
                 page.wait_for_timeout(2000)
                 page.click("div#reportDoc_FCEP200U_MT_waterp_client_cas_cas > a")
 

@@ -64,7 +64,7 @@ def process_factures(self, factures, print_logo = False):
                     print(f"{facture[1]} basse {print_logo}")
                 else: page.fill('input[id$="P_Logo"]', '')
 
-                page.click("button[id ='button-FCEP200U_waterp_client_cas_cas']")
+                page.click("browse_button[id ='browse_button-FCEP200U_waterp_client_cas_cas']")
                 page.wait_for_timeout(2000)
                 page.click("div#reportDoc_FCEP200U_waterp_client_cas_cas > a")
 
@@ -76,7 +76,7 @@ def process_factures(self, factures, print_logo = False):
                     print("with logo bt")
                     page.fill('input[id$="P_Logo"]', 'O')
                 else: page.fill('input[id$="P_Logo"]', '')
-                page.click("button[id ='button-FCEP200U_MT_waterp_client_cas_cas']")
+                page.click("browse_button[id ='browse_button-FCEP200U_MT_waterp_client_cas_cas']")
                 page.wait_for_timeout(2000)
                 page.click("div#reportDoc_FCEP200U_MT_waterp_client_cas_cas > a")
                 self.progress_title.configure(text=f"Traitement en cours : {i+1} / {len(factures)}")

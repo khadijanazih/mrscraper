@@ -1,0 +1,3 @@
+1) Set WF Updaters
+2) Set Mass Printing Function & UI
+3) Refactor Code
