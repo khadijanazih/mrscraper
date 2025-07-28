@@ -1,3 +1,9 @@
-1) Set WF Updaters
-2) Set Mass Printing Function & UI
+1) Set WF Updaters (Front-end)
+	1-1) Set WF Updaters (UI) | Done
+	1-2) Set WF Updaters (Code) | Done
+
+2) Set Mass Printing UI | Done
+	2-1) Set Mass Printing (UI) | Done
+	2-2) Set Mass Printing (code) 
+
 3) Refactor Code

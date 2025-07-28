@@ -46,6 +46,31 @@ def set_info_msgs(update_ui_callback, theme, message):
     update_ui_callback(theme, message)
     return True
 
+### INITIATE_WORKFLOW()
+def initiate_wf(app_instance):
+    app_instance.step_labels[0].configure(text="Selection Fichier")
+    app_instance.step_labels[1].configure(text="Extraction Données")
+    app_instance.step_labels[2].configure(text="Processus WAT.ERP")
+    app_instance.step_labels[3].configure(text="Export Données")
+    set_wf_state(app_instance, 1)
+
+def set_wf_state(app_instance, current_step):
+        for i in range(4):
+            step = i+1
+            if  step < current_step:#step is complete
+                app_instance.number_frames[i].configure(fg_color='#28a745')
+                app_instance.number_labels[i].configure(text_color='#FFF')
+                app_instance.step_labels[i].configure(text_color ='#28a745')
+
+            elif step > current_step: #step is inactive
+                app_instance.number_frames[i].configure(fg_color='#e9ecef')
+                app_instance.number_labels[i].configure(text_color='#333')
+                app_instance.step_labels[i].configure(text_color ='#333')
+            else: #step is ongoing
+                app_instance.number_frames[i].configure(fg_color='#007bff')
+                app_instance.number_labels[i].configure(text_color='#FFF')
+                app_instance.step_labels[i].configure(text_color ='#007bff')
+
 ### 1 - OPEN FILE DIALOG ###
 
 def openfile_dialog(app_instance):
@@ -73,6 +98,7 @@ def openfile_dialog(app_instance):
     app_instance.file_path_label.configure(text=f"Fichier : {file_name}")
     app_instance.file_textbox.insert(0, f"{os.path.basename(file_name)}")
     app_instance.set_info_msgs('success', f'Fichier Selectionné {os.path.basename(file_name)}')
+    set_wf_state(app_instance,2)
     return 1
 
 
@@ -124,6 +150,7 @@ def extract_data (app_instance): # Renamed 'self' to 'app_instance' for clarity
 
     if isinstance(data_array, list) and len(data_array) > 0:
         app_instance.execute_button.configure(state = "normal")
+        set_wf_state(app_instance,3)
     return data_array
 
 ## 3 - PLAYWRIGHT PROCESSING##
@@ -142,7 +169,7 @@ def waterp_login(username, password, url="https://waterp-cas.srm-cas.local/"): #
             page.goto(url, timeout=10000)
             page.fill("input[name='username']", username)
             page.fill("input[name='password']", password)
-            page.click("form[name = 'form'] > browse_button")
+            page.click("form[name = 'form'] > button")
             page.wait_for_timeout(2000)
 
             alert_text = page.locator(".form-container .row .alert-danger")
@@ -167,7 +194,7 @@ def waterp_login(username, password, url="https://waterp-cas.srm-cas.local/"): #
         return login_tag,storage, info_message
 
 # Process functions now accept set_info_msgs_callback
-def process_factures(set_info_msgs_callback, factures, progress_callback, print_logo=False):
+def process_factures(set_info_msgs_callback, factures, progress_callback,print_logo=False, advanced = None):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False, executable_path=CHROME_PATH)
         context = browser.new_context(storage_state="state.json", ignore_https_errors=True)
@@ -178,52 +205,56 @@ def process_factures(set_info_msgs_callback, factures, progress_callback, print_
         page.click('.reportingnav--types > li > a:has-text("Facturation")')
         page.wait_for_load_state("domcontentloaded")
 
-        total_factures = len(factures)
-        start_time = None
-        end_time = None
+        if advanced == None:
+            total_factures = len(factures)
+            start_time = None
+            end_time = None
 
-        for i, facture in enumerate(factures):
-            if i == 0:
-                start_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            for i, facture in enumerate(factures):
+                if i == 0:
+                    start_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
-            if facture[1].startswith("BT "):
-                page.click("div#reportDoc_FCEP200U_waterp_client_cas_cas > a")
-                page.fill('input[id$="NUM_FAC_CLI"]', facture[0])
-                page.wait_for_load_state("domcontentloaded")
-                if print_logo:
-                    page.fill('input[id$="P_Logo"]', 'O')
+                if facture[1].startswith("BT "):
+                    page.click("div#reportDoc_FCEP200U_waterp_client_cas_cas > a")
+                    page.fill('input[id$="NUM_FAC_CLI"]', facture[0])
+                    page.wait_for_load_state("domcontentloaded")
+                    if print_logo:
+                        page.fill('input[id$="P_Logo"]', 'O')
 
-                else:
-                    page.fill('input[id$="P_Logo"]', '')
+                    else:
+                        page.fill('input[id$="P_Logo"]', '')
 
-                page.click("browse_button[id ='browse_button-FCEP200U_waterp_client_cas_cas']")
-                page.wait_for_timeout(2000)
-                page.click("div#reportDoc_FCEP200U_waterp_client_cas_cas > a")
+                    page.click("button[id ='button-FCEP200U_waterp_client_cas_cas']")
+                    page.wait_for_timeout(2000)
+                    page.click("div#reportDoc_FCEP200U_waterp_client_cas_cas > a")
 
-            elif facture[1].startswith("MT "):
-                page.click("div#reportDoc_FCEP200U_MT_waterp_client_cas_cas > a")
-                page.fill('input[id$="num_fac_cli"]', facture[0])
-                page.wait_for_load_state("domcontentloaded")
-                if print_logo:
+                elif facture[1].startswith("MT "):
+                    page.click("div#reportDoc_FCEP200U_MT_waterp_client_cas_cas > a")
+                    page.fill('input[id$="num_fac_cli"]', facture[0])
+                    page.wait_for_load_state("domcontentloaded")
+                    if print_logo:
 
-                    page.fill('input[id$="P_Logo"]', 'O')
-                else:
-                    page.fill('input[id$="P_Logo"]', '')
-                page.click("browse_button[id ='browse_button-FCEP200U_MT_waterp_client_cas_cas']")
-                page.wait_for_timeout(2000)
-                page.click("div#reportDoc_FCEP200U_MT_waterp_client_cas_cas > a")
+                        page.fill('input[id$="P_Logo"]', 'O')
+                    else:
+                        page.fill('input[id$="P_Logo"]', '')
+                    page.click("button[id ='button-FCEP200U_MT_waterp_client_cas_cas']")
+                    page.wait_for_timeout(2000)
+                    page.click("div#reportDoc_FCEP200U_MT_waterp_client_cas_cas > a")
 
-            progress_percent = f'{((i + 1) / total_factures) * 100:.0f}%' # Format as integer percentage
-            progress_text = f'{i + 1}/{total_factures}'
-            progress_callback(progress_text, progress_percent) # Call the progress callback
-            time.sleep(0.1) # Reduced sleep for better responsiveness during simulation
+                progress_percent = f'{((i + 1) / total_factures) * 100:.0f}%' # Format as integer percentage
+                progress_text = f'{i + 1}/{total_factures}'
+                progress_callback(progress_text, progress_percent) # Call the progress callback
+                time.sleep(0.1) # Reduced sleep for better responsiveness during simulation
 
-            if i == total_factures - 1:
-                end_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                if i == total_factures - 1:
+                    end_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
-        set_info_msgs_callback('info', f'start_time: {start_time} \n end_time: {end_time}')
-        set_info_msgs_callback('info', f'{total_factures} proccessed')
-        browser.close()
+            set_info_msgs_callback('info', f'start_time: {start_time} \n end_time: {end_time}')
+            set_info_msgs_callback('info', f'{total_factures} proccessed')
+            browser.close()
+        #else:
+            #champ_num_client = advanced['num_client']
+            #loop over période and année
     return True, start_time, end_time
 
 def process_contrats(set_info_msgs_callback, contrats, progress_callback):
@@ -238,9 +269,9 @@ def process_contrats(set_info_msgs_callback, contrats, progress_callback):
         total_contrats = len(contrats)
         for i, contrat in enumerate(contrats):
             try:
-                page.goto(r'file:///C:/Users/star1/Downloads/Wat.erp%20-%20Synth%C3%A8se%20client+test.mhtml')  # lien irl = synthese/contrat/NUM_CONTRAT
+                # page.goto(r'file:///C:/Users/star1/Downloads/Wat.erp%20-%20Synth%C3%A8se%20client+test.mhtml')  # lien irl = synthese/contrat/NUM_CONTRAT
 
-                # page.goto(fr'https://waterp-cas.srm-cas.local/clientele/synthese/contrat/{contrat}')
+                page.goto(fr'https://waterp-cas.srm-cas.local/clientele/synthese/contrat/{contrat}')
                 page.wait_for_load_state('domcontentloaded')
                 page.click('a[data-target="#compteclient"]')
                 page.wait_for_load_state("load")
@@ -367,10 +398,11 @@ def execute(set_info_msgs_callback, extracted_data, check_value, progress_callba
     result_data = None
     if isinstance(extracted_data, list) and len(extracted_data) > 0:
         if all(isinstance(item, tuple) and len(item) == 2 for item in extracted_data):
-            result_data = process_factures(set_info_msgs_callback, extracted_data, progress_callback, check_value, app_instance)
+            result_data = process_factures(set_info_msgs_callback, extracted_data, progress_callback, check_value)
             if result_data is not None:
                 app_instance.print_button.configure(state="normal")
                 set_info_msgs_callback('success', 'Données Factures Extraites à Partir de WAT.ERP')
+                set_wf_state(app_instance, 4)
             else:
                 set_info_msgs_callback('alert', 'Echec d\'extraction à Partir de WAT.ERP')
 
@@ -380,6 +412,7 @@ def execute(set_info_msgs_callback, extracted_data, check_value, progress_callba
             if result_data is not None:
                 app_instance.export_button.configure(state="normal")
                 set_info_msgs_callback('success', 'Données Contrats Extraites à Partir de WAT.ERP')
+                set_wf_state(app_instance, 4)
             else:
                 set_info_msgs_callback('alert', 'Echec d\'extraction à Partir de WAT.ERP')
 
